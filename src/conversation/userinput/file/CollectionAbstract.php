@@ -80,7 +80,7 @@ abstract class CollectionAbstract extends conversation\userinput\BaseAbstract
       protected function stepRequest(): void
          {
             $req = $this->getCurrentRequest();
-            $file = $this->files[$this->getCurrentFileName()] ?? null;
+            $file = $this->files[$req->getName()] ?? null;
             
             $this->bot->sendMessage($req->getText($file?->getNeedsConfirmation() ?? false), $req->isOptional()||!empty($file)? [
                'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(

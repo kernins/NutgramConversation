@@ -6,7 +6,7 @@ class Request implements \Stringable
    {
       protected string  $name;
       protected string  $text;
-      protected ?string $textConfirm = null;
+      protected ?string $textAlt = null;
       
       protected bool    $required;
       
@@ -21,9 +21,9 @@ class Request implements \Stringable
             $this->setRequired($required);
          }
       
-      public function setTextConfirm(string $text): static
+      public function setTextAlt(string $text): static
          {
-            $this->textConfirm = $text;
+            $this->textAlt = $text;
             return $this;
          }
       
@@ -45,10 +45,10 @@ class Request implements \Stringable
             return $this->name;
          }
       
-      public function getText(bool $confirmation=false): string
+      public function getText(bool $alt=false): string
          {
-            return $confirmation && !empty($this->textConfirm)?
-               $this->textConfirm :
+            return $alt && !empty($this->textAlt)?
+               $this->textAlt :
                $this->text;
          }
       

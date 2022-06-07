@@ -40,23 +40,27 @@ abstract class CollectionAbstract extends conversation\userinput\BaseAbstract
             $this->loadDefaultCollection();
          }
       
-      protected function loadDefaultCollection(): void
+      final protected function loadDefaultCollection(): void
          {
             foreach($this->filesDefault as $file)
                {
-                  if(!empty($req=$this->getSourceRequest($file)))
-                     {
-                        //there could have been changes in request data,
-                        //particularly in cases where filenames are based on userinput
-                        $file->setTargetFilename(
-                           $this->sanitizeLocalPath(
-                              $req->formatFilename($file->getName()),
-                              $file->getExtension()
-                           )
-                        );
-                        $file->setNeedsConfirmation(true);
-                     }
+                  $this->prepareDefaultFile($file);
                   $this->files[$file->getName()] = $file;
+               }
+         }
+      
+      protected function prepareDefaultFile(model\File $file): void
+         {
+            if(!empty($req=$this->getSourceRequest($file)))
+               {
+                  //there could have been changes in request data,
+                  //particularly in cases where filenames are based on userinput
+                  $file->setTargetFilename(
+                     $this->sanitizeLocalPath(
+                        $req->formatFilename($file->getName()),
+                        $file->getExtension()
+                     )
+                  );
                }
          }
       
@@ -79,14 +83,7 @@ abstract class CollectionAbstract extends conversation\userinput\BaseAbstract
       
       protected function stepRequest(): void
          {
-            $req = $this->getCurrentRequest();
-            $file = $this->files[$req->getName()] ?? null;
-            
-            $this->bot->sendMessage($req->getText($file?->getNeedsConfirmation() ?? false), $req->isOptional()||!empty($file)? [
-               'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
-                  $this->buildInlineButtonStep($this->__t(empty($file)? 'Skip':'Keep current'), 'stepSkip')
-               )
-            ] : []);
+            $this->requestFile($this->getCurrentRequest());
             $this->next('stepAcquire');
          }
       
@@ -140,13 +137,18 @@ abstract class CollectionAbstract extends conversation\userinput\BaseAbstract
                }
          }
       
+      protected function onFileAcquired(model\File $file): void
+         {
+         
+         }
+      
+      
       abstract protected function stepSkip(): void;
       
+      abstract protected function requestFile(model\Request $req): void;
+      abstract protected function newAcquiredFile(string $id, string $name, string $localPath, ?string $trgFilename): model\File;
       
       abstract protected function getSentFile(): ?TGTypes\Media\File;
-      abstract protected function newAcquiredFile(string $id, string $name, string $localPath, ?string $trgFilename): model\File;
-      abstract protected function onFileAcquired(model\File $file): void;
-      
       abstract protected function getSourceRequest(model\File $forFile): ?model\Request;
       abstract protected function getCurrentRequest(): model\Request;
       abstract protected function getCurrentFileName(): string;

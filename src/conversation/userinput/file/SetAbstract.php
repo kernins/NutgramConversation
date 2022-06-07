@@ -32,6 +32,12 @@ abstract class SetAbstract extends CollectionAbstract
             parent::__construct($saveDir, $filesDefault);
          }
       
+      protected function prepareDefaultFile(model\File $file): void
+         {
+            parent::prepareDefaultFile($file);
+            $file->setNeedsConfirmation(true); //ask for replacement
+         }
+      
       
       public function reset(): void
          {
@@ -71,16 +77,27 @@ abstract class SetAbstract extends CollectionAbstract
       protected function stepSkip(): void
          {
             if(isset($this->files[$cfn=$this->getCurrentFileName()]))
-               $this->files[$cfn]->setNeedsConfirmation(false);
+               $this->files[$cfn]->setNeedsConfirmation(false); //user skipped -> confirmed
             
             $this->currReqIdx++;
             $this->invokeNextStep(self::STEP_START);
          }
       
       
+      protected function requestFile(model\Request $req): void
+         {
+            $file = $this->files[$req->getName()] ?? null;
+            $this->bot->sendMessage($req->getText($file?->getNeedsConfirmation() ?? false), $req->isOptional()||!empty($file)? [
+               'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
+                  $this->buildInlineButtonStep($this->__t(empty($file)? 'Skip':'Keep current'), 'stepSkip')
+               )
+            ] : []);
+         }
+      
       protected function onFileAcquired(model\File $file): void
          {
             $this->currReqIdx++;
+            parent::onFileAcquired($file);
          }
       
       

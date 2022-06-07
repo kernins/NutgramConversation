@@ -1,6 +1,7 @@
 <?php
 namespace dp\NutgramConversation\conversation\userinput\file;
 use dp\NutgramConversation\conversation;
+use SergiX44\Nutgram\Telegram\Types as TGTypes;
 
 
 abstract class ListAbstract extends CollectionAbstract
@@ -18,9 +19,6 @@ abstract class ListAbstract extends CollectionAbstract
          {
             $this->request = $request;
             parent::__construct($saveDir, $filesDefault);
-            
-            if(!empty($this->files))
-               $this->request->setRequired(false);
          }
       
       
@@ -35,10 +33,14 @@ abstract class ListAbstract extends CollectionAbstract
          }
       
       
-      protected function onFileAcquired(model\File $file): void
+      protected function requestFile(model\Request $req): void
          {
-            //required means at least 1 file, we got it now
-            $this->getCurrentRequest()->setRequired(false);
+            $acqCnt = count($this->files);
+            $this->bot->sendMessage($this->__tp($req->getText($acqCnt>0), $acqCnt), $req->isOptional()||($acqCnt>0)? [
+               'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
+                  $this->buildInlineButtonStep($this->__t('Skip'), 'stepSkip')
+               )
+            ] : []);
          }
       
       

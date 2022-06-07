@@ -1,0 +1,13 @@
+{
+    "name": "dp/NutgramConversation",
+
+    "autoload": {
+        "psr-4": {
+            "dp\\NutgramConversation\\": "src/"
+        }
+    },
+
+    "require": {
+        "nutgram/nutgram": "^3.2"
+    }
+}

@@ -127,14 +127,12 @@ abstract class NestedAbstract
             //TMPFIX: empty($this->_parentScopeIntent) cond, revisit and improve
             if(empty($intent) && empty($this->_parentScopeIntent) && $this->_isStarted && $this->bot->isCallbackQuery())
                {
-                  echo __METHOD__.'['.static::class.']: handling cb query'.PHP_EOL;
                   $this->bot->answerCallbackQuery();
                   //TODO: improve this, clear buttons even if user's msg wasn\'t a CBQ
                   try {$this->bot->editMessageReplyMarkup();}
                   catch(\Throwable $ex) {/*in case msg is uneditable do nothing*/}
                   
                   $intent = Intent::newInstanceFromString($this->bot->callbackQuery()?->data);
-                  echo __METHOD__.'['.static::class.']: CBQ Intent: '.$intent.PHP_EOL;
                }
                
             if(!empty($intent)) $this->handleIntent($intent);
@@ -143,7 +141,6 @@ abstract class NestedAbstract
       
       final protected function invokeNextStep(?string $step=null, ?Intent $intent=null): void
          {
-            echo __METHOD__.'['.static::class.']: '.$step.' / '.$this->_nextStep.PHP_EOL;
             if($step !== null) $this->next($step);
             
             $this->_isStarted = true;
@@ -154,8 +151,6 @@ abstract class NestedAbstract
       final protected function handleIntent(Intent $intent): void
          {
             [$this->_currentScopeIntent, $nestedIntent] = $intent->split();
-            echo __METHOD__.'['.static::class.']: handling Intent: '.$this->_currentScopeIntent.' / nested '.$nestedIntent.PHP_EOL;
-            
             $this->routeIntent($this->_currentScopeIntent, $nestedIntent);
          }
          
@@ -189,7 +184,6 @@ abstract class NestedAbstract
       
       public function reset(): void
          {
-            echo __METHOD__.'['.static::class.']: RESET'.PHP_EOL;
             $this->next(self::STEP_START);
             $this->_isStarted = false;
             $this->_isCompleted = false;
@@ -198,7 +192,6 @@ abstract class NestedAbstract
       
       final protected function next(string $step): void
          {
-            echo __METHOD__.'['.static::class.']: '.$step.PHP_EOL;
             if(empty($step) || !method_exists($this, $step))
                throw new exception\LogicException('Invalid step ['.$step.']: no handler method found');
             
@@ -244,7 +237,6 @@ abstract class NestedAbstract
                      $this->_parentScopeIntent
                   ));
                   $this->_nestedConversations[$key] = $inst;
-                  echo __METHOD__.'['.static::class.']: Registered NestedConv for '.$key.PHP_EOL;
                }
             return $this->_nestedConversations[$key];
          }
@@ -252,7 +244,6 @@ abstract class NestedAbstract
       final protected function unregNestedConversation(string $key): void
          {
             unset($this->_nestedConversations[$key]);
-            echo __METHOD__.'['.static::class.']: UNREGISTERED NestedConv for '.$key.PHP_EOL;
          }
       
       

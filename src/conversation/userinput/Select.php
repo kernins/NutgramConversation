@@ -11,27 +11,28 @@ class Select extends BaseAbstract
       protected const INTENT_NS_SELOPT = 'selopt';
       
       
-      protected string|\Stringable|null   $value = null;
-      protected string|\Stringable|null   $valueDefault = null;
+      protected ?string $value = null;
+      protected ?string $valueDefault = null;
       
-      protected bool                      $isCancelable = false;
+      protected bool    $isCancelable = false;
       
-      protected array                     $options;
+      /** @var string[]|\Stringable[]  [string key => string|\Stringable value] */
+      protected array   $options;
       
       
       
-      public function __construct(array $options, $default=null, bool $cancelable=false)
+      public function __construct(array $options, ?string $default=null, bool $cancelable=false)
          {
             $this->options = $options;
             
-            if($default !== null) $this->valueDefault = $default;
+            if(($default!==null) && isset($this->options[$default])) $this->valueDefault = $default;
             $this->isCancelable = $cancelable;
             
             parent::__construct();
          }
       
       
-      public function getValue(): string|\Stringable
+      public function getValue(): ?string
          {
             if(!$this->isEnded()) throw new exception\BadMethodCallException('Can not get value from unfinished UserInput collector');
             return $this->value ?? $this->valueDefault;
@@ -51,7 +52,7 @@ class Select extends BaseAbstract
          
             if($this->valueDefault !== null)
                {
-                  $text = $this->__t('Select an option or keep current [%s]', $this->options[$this->valueDefault] ?? $this->valueDefault);
+                  $text = $this->__t('Select an option or keep current [%s]', $this->options[$this->valueDefault]);
                   $markup->addRow($this->buildInlineButtonEnd($this->__t('Keep current')));
                }
             else
@@ -61,9 +62,11 @@ class Select extends BaseAbstract
                }
             
             foreach($this->options as $key => $name)
-               $markup->addRow($this->buildInlineButtonOption($key, $name));
+               {
+                  if($key === $this->valueDefault) continue;
+                  $markup->addRow($this->buildInlineButtonOption($key, $name));
+               }
             
-               
             $this->bot->sendMessage($text, ['reply_markup' => $markup]);
          }
       
@@ -73,7 +76,7 @@ class Select extends BaseAbstract
             if(!isset($this->options[$intent->action]))
                throw new exception\OutOfBoundsException('Invalid option ID ['.$intent->action.']: no such entry');
          
-            $this->value = (string)$intent->action;
+            $this->value = $intent->action;
             $this->end();
          }
       

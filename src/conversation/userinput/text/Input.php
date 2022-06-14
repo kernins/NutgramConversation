@@ -66,7 +66,7 @@ class Input extends BaseAbstract
                }
             catch(\Exception $ex)
                {
-                  $this->bot->sendMessage($this->__t('Incorrect value: %s', $ex->getMessage()));
+                  $this->sendMessage($this->__t('Incorrect value: %s', $ex->getMessage()));
                   $this->invokeNextStep(self::STEP_START);
                }
          }
@@ -78,7 +78,7 @@ class Input extends BaseAbstract
          
       protected function stepConfirm(): void
          {
-            $this->bot->sendMessage($this->__t("New value: %s\nSave?", $this->value), [
+            $this->sendMessage($this->__t("New value: %s\nSave?", $this->value), [
                'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
                   $this->buildInlineButtonEnd($this->__t('Yes')),
                   $this->buildInlineButtonStepStart($this->__t('No'))

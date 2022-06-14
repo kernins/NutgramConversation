@@ -120,7 +120,7 @@ abstract class CollectionAbstract extends conversation\userinput\BaseAbstract
                      }
                   catch(\Exception $ex)
                      {
-                        $this->bot->sendMessage(
+                        $this->sendMessage(
                            $this->__t("Failed to save file %s: %s\nTry again please", $name, $ex->getMessage()),
                            $req->isOptional()? [
                               'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
@@ -132,7 +132,7 @@ abstract class CollectionAbstract extends conversation\userinput\BaseAbstract
                }
             else
                {
-                  $this->bot->sendMessage($this->__t('No files of expected type were uploaded'));
+                  $this->sendMessage($this->__t('No files of expected type were uploaded'));
                   $this->invokeNextStep('stepRequest');
                }
          }

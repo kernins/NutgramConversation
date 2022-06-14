@@ -48,7 +48,7 @@ abstract class BaseAbstract extends conversation\userinput\BaseAbstract
                   if($this->isCancelable) $btn = $this->buildInlineButtonEnd($this->__t('Cancel'));
                }
          
-            $this->bot->sendMessage($text, !empty($btn)? [
+            $this->sendMessage($text, !empty($btn)? [
                'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow($btn)
             ] : []);
             

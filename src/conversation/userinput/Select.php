@@ -67,7 +67,7 @@ class Select extends BaseAbstract
                   $markup->addRow($this->buildInlineButtonOption($key, $name));
                }
             
-            $this->bot->sendMessage($text, ['reply_markup' => $markup]);
+            $this->sendMessage($text, ['reply_markup' => $markup]);
          }
       
       

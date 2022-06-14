@@ -58,6 +58,12 @@ abstract class NestedAbstract
        */
       private array              $_nestedConversations = [];
       
+      /**
+       * Latest bot message with ReplyMarkup attached
+       * @var array  [chatId => messageId]
+       */
+      private array              $_lastMessageWithReplyMarkup = [];
+      
       
       
       public function __construct(?Intent $parentScope=null, ?Translator $trans=null)
@@ -128,13 +134,24 @@ abstract class NestedAbstract
             if(empty($intent) && empty($this->_parentScopeIntent) && $this->_isStarted && $this->bot->isCallbackQuery())
                {
                   $this->bot->answerCallbackQuery();
-                  //TODO: improve this, clear buttons even if user's msg wasn\'t a CBQ
-                  try {$this->bot->editMessageReplyMarkup();}
-                  catch(\Throwable $ex) {/*in case msg is uneditable do nothing*/}
-                  
                   $intent = Intent::newInstanceFromString($this->bot->callbackQuery()?->data);
                }
-               
+            
+            $cid = $this->bot->chatId();
+            if(!empty($this->_lastMessageWithReplyMarkup[$cid]))
+               {
+                  try
+                     {
+                        $this->bot->editMessageReplyMarkup([
+                           'chat_id'      => $cid,
+                           'message_id'   => $this->_lastMessageWithReplyMarkup[$cid]
+                        ]);
+                        unset($this->_lastMessageWithReplyMarkup[$cid]);
+                        
+                     }
+                  catch(\Throwable $ex) {/*in case msg is uneditable do nothing*/}
+               }
+            
             if(!empty($intent)) $this->handleIntent($intent);
             else $this->invokeNextStep();
          }
@@ -297,6 +314,17 @@ abstract class NestedAbstract
       protected function getBot(): Nutgram\Nutgram
          {
             return $this->bot;
+         }
+      
+      
+      protected function sendMessage(string $text, array $opts=[]): ?TGTypes\Message\Message
+         {
+            $msg = $this->bot->sendMessage($text, $opts);
+            
+            if($msg?->reply_markup instanceof TGTypes\Keyboard\InlineKeyboardMarkup)
+               $this->_lastMessageWithReplyMarkup[$msg->chat->id] = $msg->message_id;
+            
+            return $msg;
          }
       
       

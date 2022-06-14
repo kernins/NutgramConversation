@@ -36,7 +36,7 @@ abstract class ListAbstract extends CollectionAbstract
       protected function requestFile(model\Request $req): void
          {
             $acqCnt = count($this->files);
-            $this->bot->sendMessage($this->__tp($req->getText($acqCnt>0), $acqCnt), $req->isOptional()||($acqCnt>0)? [
+            $this->sendMessage($this->__tp($req->getText($acqCnt>0), $acqCnt), $req->isOptional()||($acqCnt>0)? [
                'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
                   $this->buildInlineButtonStep($this->__t('Skip'), 'stepSkip')
                )

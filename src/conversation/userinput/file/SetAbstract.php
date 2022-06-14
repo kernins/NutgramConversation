@@ -58,7 +58,7 @@ abstract class SetAbstract extends CollectionAbstract
             if($this->currReqIdx < $cntReq) $this->invokeNextStep('stepRequest');
             elseif(($cntSkp=$cntReq-count($this->files)) > 1)
                {
-                  $this->bot->sendMessage($this->__tp('Would like to upload any of %u skipped entries?', $cntSkp), [
+                  $this->sendMessage($this->__tp('Would like to upload any of %u skipped entries?', $cntSkp), [
                      'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
                         $this->buildInlineButtonStep($this->__t('Yes'), 'stepStartover'),
                         $this->buildInlineButtonEnd($this->__t('No'))
@@ -87,7 +87,7 @@ abstract class SetAbstract extends CollectionAbstract
       protected function requestFile(model\Request $req): void
          {
             $file = $this->files[$req->getName()] ?? null;
-            $this->bot->sendMessage($req->getText($file?->getNeedsConfirmation() ?? false), $req->isOptional()||!empty($file)? [
+            $this->sendMessage($req->getText($file?->getNeedsConfirmation() ?? false), $req->isOptional()||!empty($file)? [
                'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
                   $this->buildInlineButtonStep($this->__t(empty($file)? 'Skip':'Keep current'), 'stepSkip')
                )
@@ -113,7 +113,7 @@ abstract class SetAbstract extends CollectionAbstract
       protected function getCurrentRequest(): model\Request
          {
             if(empty($this->requests[$this->currReqIdx]))
-               throw new exception\LogicException('getCurrentRequest() called with out-of-bounds ptr');
+               throw new exception\LogicException('getCurrentRequest() called with out-of-bounds ptr: '.$this->currReqIdx);
          
             return $this->requests[$this->currReqIdx];
          }

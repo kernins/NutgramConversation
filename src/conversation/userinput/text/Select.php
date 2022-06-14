@@ -62,7 +62,7 @@ class Select extends BaseAbstract
                         if(($this->dictionary instanceof model\IDictionaryExtendable) && (count($opts) == $found))
                            $markup->addRow($this->buildInlineButtonStep($this->__t('Add new option'), 'stepNewOption'));
 
-                        $this->bot->sendMessage(
+                        $this->sendMessage(
                            $found > 0?
                               $this->__tp('Got %u total matches, pick one or refine your search', $found) :
                               $this->__t('Nothing found, refine your search'),
@@ -73,7 +73,7 @@ class Select extends BaseAbstract
                }
             catch(\Exception $ex)
                {
-                  $this->bot->sendMessage($this->__t('Incorrect value: %s', $ex->getMessage()));
+                  $this->sendMessage($this->__t('Incorrect value: %s', $ex->getMessage()));
                   $this->invokeNextStep(self::STEP_START);
                }
          }
@@ -101,7 +101,7 @@ class Select extends BaseAbstract
             if(!($this->dictionary instanceof model\IDictionaryExtendable))
                throw new exception\LogicException('Only ExtendableDictionary can accept custom options');
             
-            $this->bot->sendMessage($this->__t('Input full name of the new option to be added'), [
+            $this->sendMessage($this->__t('Input full name of the new option to be added'), [
                'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
                   $this->buildInlineButtonStepStart($this->__t('Cancel'))
                )
@@ -127,14 +127,14 @@ class Select extends BaseAbstract
                }
             catch(\Exception $ex)
                {
-                  $this->bot->sendMessage($this->__t('Incorrect value: %s', $ex->getMessage()));
+                  $this->sendMessage($this->__t('Incorrect value: %s', $ex->getMessage()));
                   $this->invokeNextStep('stepNewOption');
                }
          }
       
       protected function stepNewOptionConfirm(): void
          {
-            $this->bot->sendMessage($this->__t("New value: %s\nSave?", $this->pendingDictEntry), [
+            $this->sendMessage($this->__t("New value: %s\nSave?", $this->pendingDictEntry), [
                'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
                   $this->buildInlineButtonStep($this->__t('Yes'), 'stepNewOptionSave'),
                   $this->buildInlineButtonStep($this->__t('No'), 'stepNewOption')
@@ -152,7 +152,7 @@ class Select extends BaseAbstract
                }
             catch(\Exception $ex)
                {
-                  $this->bot->sendMessage($this->__t('Failed to add new option to dictionary: %s', $ex->getMessage()));
+                  $this->sendMessage($this->__t('Failed to add new option to dictionary: %s', $ex->getMessage()));
                   $this->invokeNextStep('stepNewOption');
                }
          }

@@ -12,7 +12,7 @@ class Select extends BaseAbstract
       protected model\IDictionary   $dictionary;
       protected int                 $optsListLimit;
       
-      protected ?string             $pendingDictEntry = null;
+      protected ?string             $lastSearch = null;
       
       
       
@@ -35,12 +35,13 @@ class Select extends BaseAbstract
       public function reset(): void
          {
             parent::reset();
-            $this->pendingDictEntry = null;
+            $this->lastSearch = null;
          }
       
       
       protected function stepStart(?conversation\Intent $intent=null): void
          {
+            $this->lastSearch = null;
             $this->sendStartingMessage(
                'Input part of the desired option name or keep current [%s]',
                'Input part of the desired option name'
@@ -51,10 +52,11 @@ class Select extends BaseAbstract
          {
             try
                {
-                  if(($text=$this->getSentText()) !== null)
+                  if(!empty($text=$this->getSentText())) $this->lastSearch = $text;
+                  if($this->lastSearch !== null)
                      {
                         $found = 0;
-                        $opts = $this->dictionary->search($text, $this->optsListLimit, $found);
+                        $opts = $this->dictionary->search($this->lastSearch, $this->optsListLimit, $found);
 
                         $markup = TGTypes\Keyboard\InlineKeyboardMarkup::make();
                         foreach($opts as $opt) $markup->addRow($this->buildInlineButtonOption($opt));
@@ -89,67 +91,46 @@ class Select extends BaseAbstract
          }
       
       
-      protected function stepNewOption(): void
+      protected function stepNewOption(?conversation\Intent $intent=null): void
          {
-            //TODO: refactor, use nested text\Input
-         
             //safeguard
             if(!($this->dictionary instanceof model\IDictionaryExtendable))
                throw new exception\LogicException('Only ExtendableDictionary can accept custom options');
             
-            $this->sendMessage($this->__t('Input full name of the new option to be added'), [
-               'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
-                  $this->buildInlineButtonStepStart($this->__t('Cancel'))
-               )
-            ]);
-            
-            $this->next('stepNewOptionAcquire');
-         }
-      
-      protected function stepNewOptionAcquire(): void
-         {
             try
                {
-                  if(($text=$this->getSentText()) !== null)
-                     {
-                        if(!$this->dictionary->isValidForAddition($text)) throw new exception\UnexpectedValueException(
-                           $this->__t('Such dictionary entry already exists')
-                        );
+                  /* @var $subc Input */
+                  $subc = $this->getNestedConversation(__METHOD__, function() {
+                     return new Input(
+                        default: $this->lastSearch,
+                        cancelable: true
+                     );
+                  }, [
+                     'Input new value'                      => $this->__tm('Input full name of the new option to be added'),
+                     'Input new value or keep current [%s]' => $this->__tm('Input full name of the new option to be added or use query [%s]'),
+                     'Keep current'                         => $this->__tm('Use query'),
+                     "New value: %s\nSave?"                 => $this->__tm('Add new option with name "%s"?')
+                  ]);
                         
-                        $this->pendingDictEntry = $text;
-                        $this->invokeNextStep('stepNewOptionConfirm');
+                  if($subc->invoke($this->bot, $intent))
+                     {
+                        $this->unregNestedConversation(__METHOD__);
+                        
+                        if(($opt=$subc->getValue()) !== null)
+                           {
+                              if(!$this->dictionary->isValidForAddition($opt)) throw new exception\UnexpectedValueException(
+                                 $this->__t('Such dictionary entry already exists')
+                              );
+                              $this->value = $this->dictionary->add($opt);
+                              $this->end();
+                           }
+                        else $this->invokeNextStep('stepStart');
                      }
-                  else $this->invokeNextStep('stepNewOption');
                }
             catch(\Exception $ex)
                {
                   $this->sendMessage($this->__t('Incorrect value: %s', $ex->getMessage()));
-                  $this->invokeNextStep('stepNewOption');
-               }
-         }
-      
-      protected function stepNewOptionConfirm(): void
-         {
-            $this->sendMessage($this->__t("New value: %s\nSave?", $this->pendingDictEntry), [
-               'reply_markup' => TGTypes\Keyboard\InlineKeyboardMarkup::make()->addRow(
-                  $this->buildInlineButtonStep($this->__t('Yes'), 'stepNewOptionSave'),
-                  $this->buildInlineButtonStep($this->__t('No'), 'stepNewOption')
-               )
-            ]);
-         }
-      
-      protected function stepNewOptionSave(): void
-         {
-            try
-               {
-                  $this->value = $this->dictionary->add($this->pendingDictEntry);
-                  $this->pendingDictEntry = null;
-                  $this->end();
-               }
-            catch(\Exception $ex)
-               {
-                  $this->sendMessage($this->__t('Failed to add new option to dictionary: %s', $ex->getMessage()));
-                  $this->invokeNextStep('stepNewOption');
+                  $this->invokeNextStep('stepSearch'); //allow to escape newOption in case of dup or user changed mind
                }
          }
       

@@ -236,7 +236,7 @@ abstract class NestedAbstract
          }
       
       
-      final protected function getNestedConversation(string $key, callable|self $factoryOrInstance): self
+      final protected function getNestedConversation(string $key, callable|self $factoryOrInstance, array $translOverrides=[]): self
          {
             if(!isset($this->_nestedConversations[$key]))
                {
@@ -252,7 +252,10 @@ abstract class NestedAbstract
                   $inst->setParentScopeIntent(Intent::newInstanceFromString(
                      (string)$this->_currentScopeIntent,
                      $this->_parentScopeIntent
-                  ));
+                  ))->setTranslator(
+                     empty($translOverrides)? $this->_translator : $this->_translator->newInstanceWithOverride($translOverrides)
+                  );
+                  
                   $this->_nestedConversations[$key] = $inst;
                }
             return $this->_nestedConversations[$key];
@@ -336,5 +339,10 @@ abstract class NestedAbstract
       protected function __tp(string $fmt, int $number, ...$params): string
          {
             return $this->_translator->translatePlural($fmt, $number, ...$params);
+         }
+      
+      protected function __tm(string $fmt): string|array
+         {
+            return $this->_translator->map($fmt);
          }
    }

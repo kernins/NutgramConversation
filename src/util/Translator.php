@@ -20,11 +20,16 @@ class Translator
       
       
       
+      public function map(string $fmt): string|array
+         {
+            return $this->strings[$fmt] ?? $fmt;
+         }
+      
       public function translate(string $fmt, ...$params): string
          {
             return sprintf($this->strings[$fmt] ?? $fmt, ...$params);
          }
-         
+      
       public function translatePlural(string $fmt, int $number, ...$params): string
          {
             if(!empty($this->strings[$fmt]))

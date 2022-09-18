@@ -79,12 +79,8 @@ class Select extends BaseAbstract
          }
       
       protected function handleSelectOptionIntent(conversation\Intent $intent): void
-         {
-            if(!is_numeric($intent->action)) throw new exception\UnexpectedValueException(
-               'Invalid SelectOption intent received: invalid option ID: '.$intent->action
-            );
-                     
-            $this->value = $this->dictionary->getByID((int)$intent->action);
+         {     
+            $this->value = $this->dictionary->getByID($intent->action);
             if(empty($this->value)) throw new exception\OutOfBoundsException(
                'Invalid option ID ['.$intent->action.']: no such entry'
             );

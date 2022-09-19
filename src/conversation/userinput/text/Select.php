@@ -42,10 +42,25 @@ class Select extends BaseAbstract
       protected function stepStart(?conversation\Intent $intent=null): void
          {
             $this->lastUserText = null;
-            $this->sendStartingMessage(
-               'Input part of the desired option name or keep current [%s]',
-               'Input part of the desired option name'
-            )->next('stepSearch');
+            
+            if(($this->dictionary instanceof model\IDictionaryExtendable) && $this->dictionary->isEmpty())
+               {
+                  $markup = TGTypes\Keyboard\InlineKeyboardMarkup::make();
+                  $markup->addRow($this->buildInlineButtonStep($this->__t('Add new option'), 'stepNewOption'));
+                  if($this->isCancelable) $markup->addRow($this->buildInlineButtonEnd($this->__t('Cancel')));
+               
+                  $this->sendMessage(
+                     $this->__t('Dictionary is empty'),
+                     ['reply_markup' => $markup]
+                  );
+               }
+            else
+               {
+                  $this->sendStartingMessage(
+                     'Input part of the desired option name or keep current [%s]',
+                     'Input part of the desired option name'
+                  )->next('stepSearch');
+               }
          }
       
       protected function stepSearch(): void

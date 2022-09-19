@@ -63,6 +63,7 @@ class Select extends BaseAbstract
 
                         if(($this->dictionary instanceof model\IDictionaryExtendable) && (count($opts) == $found))
                            $markup->addRow($this->buildInlineButtonStep($this->__t('Add new option'), 'stepNewOption'));
+                        if($this->isCancelable) $markup->addRow($this->buildInlineButtonStepStart($this->__t('Cancel')));
 
                         $this->sendMessage(
                            $found > 0?

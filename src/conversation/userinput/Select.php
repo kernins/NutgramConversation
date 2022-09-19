@@ -49,6 +49,12 @@ class Select extends BaseAbstract
       protected function stepStart(?conversation\Intent $intent=null): void
          {
             $markup = TGTypes\Keyboard\InlineKeyboardMarkup::make();
+            
+            foreach($this->options as $key => $name)
+               {
+                  if($key === $this->valueDefault) continue;
+                  $markup->addRow($this->buildInlineButtonOption($key, $name));
+               }
          
             if($this->valueDefault !== null)
                {
@@ -59,12 +65,6 @@ class Select extends BaseAbstract
                {
                   $text = $this->__t('Select an option');
                   if($this->isCancelable) $markup->addRow($this->buildInlineButtonEnd($this->__t('Cancel')));
-               }
-            
-            foreach($this->options as $key => $name)
-               {
-                  if($key === $this->valueDefault) continue;
-                  $markup->addRow($this->buildInlineButtonOption($key, $name));
                }
             
             $this->sendMessage($text, ['reply_markup' => $markup]);

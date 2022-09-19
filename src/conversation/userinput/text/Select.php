@@ -12,7 +12,7 @@ class Select extends BaseAbstract
       protected model\IDictionary   $dictionary;
       protected int                 $optsListLimit;
       
-      protected ?string             $lastSearch = null;
+      protected ?string             $lastUserText = null; //last user input
       
       
       
@@ -35,13 +35,13 @@ class Select extends BaseAbstract
       public function reset(): void
          {
             parent::reset();
-            $this->lastSearch = null;
+            $this->lastUserText = null;
          }
       
       
       protected function stepStart(?conversation\Intent $intent=null): void
          {
-            $this->lastSearch = null;
+            $this->lastUserText = null;
             $this->sendStartingMessage(
                'Input part of the desired option name or keep current [%s]',
                'Input part of the desired option name'
@@ -52,11 +52,11 @@ class Select extends BaseAbstract
          {
             try
                {
-                  if(!empty($text=$this->getSentText())) $this->lastSearch = $text;
-                  if($this->lastSearch !== null)
+                  if(!empty($text=$this->getSentText())) $this->lastUserText = $text;
+                  if($this->lastUserText !== null) //using current or previous input
                      {
                         $found = 0;
-                        $opts = $this->dictionary->search($this->lastSearch, $this->optsListLimit, $found);
+                        $opts = $this->dictionary->search($this->lastUserText, $this->optsListLimit, $found);
 
                         $markup = TGTypes\Keyboard\InlineKeyboardMarkup::make();
                         foreach($opts as $opt) $markup->addRow($this->buildInlineButtonOption($opt));
@@ -97,27 +97,29 @@ class Select extends BaseAbstract
             if(!($this->dictionary instanceof model\IDictionaryExtendable))
                throw new exception\LogicException('Only ExtendableDictionary can accept custom options');
             
+            /* @var $subc Input */
+            $subc = $this->getNestedConversation(__METHOD__, function() {
+               return new Input(
+                  valueModel: $this->dictionary->getEntryValueModel(),
+                  default: !empty($this->lastUserText) && $this->dictionary->isValidForAddition($this->lastUserText)? $this->lastUserText : null,
+                  cancelable: true
+               );
+            }, [
+               'Input new value'                      => $this->__tm('Input full name of the new option to be added'),
+               'Input new value or keep current [%s]' => $this->__tm('Input full name of the new option to be added or use query [%s]'),
+               'Keep current'                         => $this->__tm('Use query'),
+               "New value: %s\nSave?"                 => $this->__tm('Add new option with name "%s"?')
+            ]);
+            
             try
-               {
-                  /* @var $subc Input */
-                  $subc = $this->getNestedConversation(__METHOD__, function() {
-                     return new Input(
-                        default: $this->lastSearch,
-                        cancelable: true
-                     );
-                  }, [
-                     'Input new value'                      => $this->__tm('Input full name of the new option to be added'),
-                     'Input new value or keep current [%s]' => $this->__tm('Input full name of the new option to be added or use query [%s]'),
-                     'Keep current'                         => $this->__tm('Use query'),
-                     "New value: %s\nSave?"                 => $this->__tm('Add new option with name "%s"?')
-                  ]);
-                        
-                  if($subc->invoke($this->bot, $intent))
+               {    
+                  if($subc->invoke($this->bot, $intent)) //finished
                      {
                         $this->unregNestedConversation(__METHOD__);
                         
                         if(($opt=$subc->getValue()) !== null)
                            {
+                              $this->lastUserText = (string)$opt; //will be used for search in case of dup
                               if(!$this->dictionary->isValidForAddition($opt)) throw new exception\UnexpectedValueException(
                                  $this->__t('Such dictionary entry already exists')
                               );

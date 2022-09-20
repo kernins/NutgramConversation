@@ -34,6 +34,12 @@ class Input extends BaseAbstract
                      throw new exception\DomainException('ValueModel must be a subclass of '.static::VALMDL_REQUIRE_SUBCLS);
                   
                   $this->valueModel = $valueModel;
+                  
+                  if(($default!==null) && !($default instanceof $this->valueModel))
+                     {
+                        try {$default = $this->valueModel::newInstanceFromString((string)$default);}
+                        catch(\Exception $ex) {$default = null;}
+                     }
                }
             
             parent::__construct($default, $cancelable);

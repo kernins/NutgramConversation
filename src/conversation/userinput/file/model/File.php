@@ -98,6 +98,11 @@ abstract class File
          }
       
       
+      public function getTargetFilename(): ?string
+         {
+            return $this->targetFilename;
+         }
+      
       public function getNeedsConfirmation(): bool
          {
             return $this->needsConfirmation;

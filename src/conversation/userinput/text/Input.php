@@ -49,6 +49,7 @@ class Input extends BaseAbstract
       
       protected function stepStart(?conversation\Intent $intent=null): void
          {
+            $this->value = null; //reset aqcuired value
             $this->sendStartingMessage(
                'Input new value or keep current [%s]',
                'Input new value'

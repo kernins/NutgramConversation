@@ -15,7 +15,7 @@ abstract class NestedAbstract
       //TODO: declare final
       protected const INTENT_NS_STEP   = 'step';
       protected const INTENT_NS_END    = 'end';
-   
+      
       
       /**
        * Must not be serialized (due to introduced circular ref)
@@ -98,7 +98,7 @@ abstract class NestedAbstract
        * @return bool            Whether this subconv is ended
        * @throws exception\BadMethodCallException
        */
-      final public function invoke(Nutgram\Nutgram $bot, ?Intent $intent=null): bool
+      public function invoke(Nutgram\Nutgram $bot, ?Intent $intent=null): bool
          {
             if($this->isEnded()) throw new exception\BadMethodCallException(
                'Attempting to continue an ended sub-conversation'
@@ -108,6 +108,8 @@ abstract class NestedAbstract
                {
                   $this->bot = $bot;
                   $this->dispatch($intent);
+                  
+                  return $this->isEnded();
                }
             catch(\Throwable $ex)
                {
@@ -118,8 +120,6 @@ abstract class NestedAbstract
                {
                   $this->bot = null;   //Closures and objects with circular refs can not be serialized
                }
-            
-            return $this->isEnded();
          }
       
       final protected function dispatch(?Intent $intent=null): void
@@ -133,7 +133,14 @@ abstract class NestedAbstract
             //TMPFIX: empty($this->_parentScopeIntent) cond, revisit and improve
             if(empty($intent) && empty($this->_parentScopeIntent) && $this->_isStarted && $this->bot->isCallbackQuery())
                {
-                  $this->bot->answerCallbackQuery();
+                  try {$this->bot->answerCallbackQuery();}
+                  catch(Nutgram\Telegram\Exceptions\TelegramException $ex)
+                     {
+                        /* In case of late request arrival (~1min+) answerCallbackQuery() will fail with
+                         * TG BadRequest "query is too old and response timeout expired or query ID is invalid"
+                         * Just ignore this, request still could be processed
+                         */
+                     }
                   $intent = Intent::newInstanceFromString($this->bot->callbackQuery()?->data);
                }
             
@@ -212,6 +219,9 @@ abstract class NestedAbstract
             if(empty($step) || !method_exists($this, $step))
                throw new exception\LogicException('Invalid step ['.$step.']: no handler method found');
             
+            if($this->_nextStep != $step)
+               $this->onStepChange($this->_nextStep, $step);
+            
             $this->_nextStep = $step;
          }
       
@@ -222,12 +232,18 @@ abstract class NestedAbstract
          }
       
       
+      protected function onStepChange(string $fromStep, string $toStep): void
+         {
+            //to be overriden if necessary
+         }
+      
+      
       final public function isEnded(): bool
          {
             return $this->_isCompleted;
          }
       
-      final public function getReturnIntent(): Intent
+      final public function getReturnIntent(): ?Intent
          {
             if(!$this->isEnded()) throw new exception\BadMethodCallException(
                'ReturnIntent can only be requested on completed Action instance'
